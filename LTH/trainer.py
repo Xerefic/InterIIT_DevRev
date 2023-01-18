@@ -126,25 +126,29 @@ class Trainer():
         epoch_metric = 0
         self.testdata.infer = True
         self.model.eval()
+
         for index in tqdm.trange(len(self.testdata)):
             input, answer = self.testdata[index]
             for key in input.keys():
                 input[key] = input[key].to(self.args.device)
             epoch_metric += self.model.score(input, answer)['f1']/len(self.testdata)
+
+            torch.cuda.empty_cache()
+
         return epoch_metric
     
     def fit(self, next=True):
         if next:
             self.start_epoch = self.load()
-        best_accuracy = 0
+        best_metric = 0
         for epoch_prune in range(self.start_prune_epoch+1, self.args.max_prune_epochs+1, 1):
             
             for epoch_train in range(self.start_train_epoch+1, self.args.max_train_epochs+1, 1):
                 epoch_train_loss = self.train()
                 epoch_test_metric = self.evaluate()
 
-                if best_accuracy < epoch_test_accuracy:
-                    best_accuracy = epoch_test_accuracy
+                if best_metric < epoch_test_metric:
+                    best_metric = epoch_test_metric
                     self.save(None, best=True)
 
             epoch_sparsity = self.prune()
