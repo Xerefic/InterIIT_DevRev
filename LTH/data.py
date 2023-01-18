@@ -2,9 +2,9 @@ from imports import *
 from args import *
 
 class Squad(Dataset):
-    def __init__(self, args):
+    def __init__(self, args, mode='train'):
         self.infer = False
-        self.data = load_dataset("squad_v2", split='train')
+        self.data = load_dataset("squad_v2", split=mode)
         self.tokenizer = AutoTokenizer.from_pretrained(args.architecture)
 
     def add_end_idx(self, answer, context):
@@ -36,10 +36,11 @@ class Squad(Dataset):
         if not self.infer:
             return encoding['input_ids'].squeeze(0), encoding['attention_mask'].squeeze(0), encoding['start_positions'].squeeze(0), encoding['end_positions'].squeeze(0)
         else:
-            return encoding, answer['text']
+            references = {'answers': {'answer_start': [answer['answer_start']], 'text': [answer['text']]}, 'id': data['id']}            
+            return encoding, references
 
     def __len__(self):
-        return len(self.data)//10
+        return len(self.data)
 
 if __name__ == "__main__":
     args = TrainingArgs()

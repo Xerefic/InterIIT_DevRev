@@ -11,7 +11,7 @@ class Trainer():
         self.start_prune_epoch = self.load()
         self.start_train_epoch = 0
 
-        self.traindata, _, _ = self.get_data()
+        self.traindata, _, self.testdata = self.get_data()
         self.trainloader, _, _ = self.get_iterator()
         
         self.model = self.get_model()
@@ -20,14 +20,15 @@ class Trainer():
         self.scheduler = self.get_scheduler()
 
     def get_data(self):
-        traindata = Squad(self.args)
-        return traindata, None, None
+        traindata = Squad(self.args, mode='train')
+        testdata = Squad(self.args, mode='validation')
+        return traindata, None, testdata
 
     def get_iterator(self):
         self.traindata.infer = False
         trainloader = DataLoader(self.traindata, batch_size=self.args.batch_size, shuffle=True, worker_init_fn=np.random.seed(self.args.seed))
         # validloader = DataLoader(valid, batch_size=self.args.batch_size, shuffle=False, worker_init_fn=np.random.seed(self.args.seed))
-        # testloader = DataLoader(test, batch_size=self.args.batch_size, shuffle=False, worker_init_fn=np.random.seed(self.args.seed))
+        # testloader = DataLoader(self.testdata, batch_size=self.args.batch_size, shuffle=False, worker_init_fn=np.random.seed(self.args.seed))
         return trainloader, None, None
 
     def get_criterion(self):
@@ -120,18 +121,30 @@ class Trainer():
                 torch.cuda.empty_cache()
 
         return epoch_loss
+
+    def evaluate(self):
+        epoch_accuracy = 0
+        self.testdata.infer = True
+        self.model.eval()
+        for index in tqdm.trange(len(self.testdata)):
+            input, answer = self.testdata[index]
+            for key in input.keys():
+                input[key] = input[key].to(self.args.device)
+            epoch_accuracy += self.model.score(input, answer)['f1']/len(self.testdata)
+        return epoch_accuracy
     
     def fit(self, next=True):
         if next:
             self.start_epoch = self.load()
-        best_loss = 1e8
+        best_accuracy = 0
         for epoch_prune in range(self.start_prune_epoch+1, self.args.max_prune_epochs+1, 1):
             
             for epoch_train in range(self.start_train_epoch+1, self.args.max_train_epochs+1, 1):
                 epoch_train_loss = self.train()
+                epoch_test_accuracy = self.evaluate()
 
-                if epoch_train_loss < best_loss:
-                    best_loss = epoch_train_loss
+                if best_accuracy < epoch_test_accuracy:
+                    best_accuracy = epoch_test_accuracy
                     self.save(None, best=True)
 
             epoch_sparsity = self.prune()
@@ -139,8 +152,7 @@ class Trainer():
 
             self.scheduler.step()
             time.sleep(1)
-            print(f'Epoch {epoch_prune}/{self.args.max_prune_epochs} | Training: Loss = {round(epoch_train_loss, 4)}  Sparsity = {epoch_sparsity}')
-
+            print(f'Epoch {epoch_prune}/{self.args.max_prune_epochs} | Training: Loss = {round(epoch_train_loss, 4)}  Sparsity = {epoch_sparsity} | Testing: Accuracy = {round(epoch_test_accuracy, 4)}')
 
 if __name__ == "__main__":
     args = TrainingArgs()

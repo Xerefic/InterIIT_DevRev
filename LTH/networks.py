@@ -8,6 +8,9 @@ class Model(nn.Module):
         self.tokenizer = AutoTokenizer.from_pretrained(args.architecture)
         self.model = AutoModelForQuestionAnswering.from_pretrained(args.architecture)
 
+        self.metric = load_metric("squad_v2")
+        
+
     def forward(self, input_ids, attention_mask, start_positions=None, end_positions=None):
         if start_positions is None and end_positions is None:
             return self.model(input_ids, attention_mask=attention_mask)
@@ -19,7 +22,12 @@ class Model(nn.Module):
         start_index = output.start_logits.argmax()
         end_index = output.end_logits.argmax()
         answer_tokens = input.input_ids[0, start_index:end_index+1]
-        return self.tokenizer.decode(answer_tokens)
+        return {'prediction_text': self.tokenizer.decode(answer_tokens), 'no_answer_probability': 0.}
+
+    def score(self, input, references):
+        predictions = self.decode(input)
+        predictions['id'] = references['id']
+        return self.metric.compute(predictions=[predictions], references=[references])
 
 if __name__ == "__main__":
     args = TrainingArgs()
