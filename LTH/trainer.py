@@ -123,15 +123,15 @@ class Trainer():
         return epoch_loss
 
     def evaluate(self):
-        epoch_accuracy = 0
+        epoch_metric = 0
         self.testdata.infer = True
         self.model.eval()
         for index in tqdm.trange(len(self.testdata)):
             input, answer = self.testdata[index]
             for key in input.keys():
                 input[key] = input[key].to(self.args.device)
-            epoch_accuracy += self.model.score(input, answer)['f1']/len(self.testdata)
-        return epoch_accuracy
+            epoch_metric += self.model.score(input, answer)['f1']/len(self.testdata)
+        return epoch_metric
     
     def fit(self, next=True):
         if next:
@@ -141,7 +141,7 @@ class Trainer():
             
             for epoch_train in range(self.start_train_epoch+1, self.args.max_train_epochs+1, 1):
                 epoch_train_loss = self.train()
-                epoch_test_accuracy = self.evaluate()
+                epoch_test_metric = self.evaluate()
 
                 if best_accuracy < epoch_test_accuracy:
                     best_accuracy = epoch_test_accuracy
@@ -152,7 +152,7 @@ class Trainer():
 
             self.scheduler.step()
             time.sleep(1)
-            print(f'Epoch {epoch_prune}/{self.args.max_prune_epochs} | Training: Loss = {round(epoch_train_loss, 4)}  Sparsity = {epoch_sparsity} | Testing: Accuracy = {round(epoch_test_accuracy, 4)}')
+            print(f'Epoch {epoch_prune}/{self.args.max_prune_epochs} | Training: Loss = {round(epoch_train_loss, 4)}  Sparsity = {epoch_sparsity} | Testing: F1 = {round(epoch_test_metric, 4)}')
 
 if __name__ == "__main__":
     args = TrainingArgs()
