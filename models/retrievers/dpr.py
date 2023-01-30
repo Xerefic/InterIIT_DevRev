@@ -33,3 +33,9 @@ class DenseRetriever():
         scores = [ [ rank['score']  for rank in ranks] for ranks in rankings ]
         rankings = [ [ self.idx_to_para_id[idx[rank['corpus_id']]]  for rank in ranks] for ranks in rankings ]
         return rankings, scores
+    
+    def to(self, device):
+        self.model_Q.to(device)
+        self.model_P.to(device)
+        self.model_Q._target_device = device
+        self.model_P._target_device = device

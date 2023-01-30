@@ -1,5 +1,7 @@
 from imports import *
-# TO do handling Question generation for BM25
+# to do handling Question generation for BM25
+# optimization
+# ranker - crossencoder + kimcnn
 
 
 @dataclass
@@ -36,3 +38,9 @@ class TrainingArgs:
 
     retriever = Retriever()
     reader = Reader()
+    
+    root_dir: str = './'
+    checkpoints_dir: str = f'{root_dir}/checkpoints/'
+    data_dir: str = f'{root_dir}/data/'
+    file_path: str = 'testset_A.csv'
+    joblib_path: str = 'pipeline.joblib'

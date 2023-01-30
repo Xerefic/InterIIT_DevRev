@@ -32,3 +32,6 @@ class SparseRetriever():
         rankings = [list(o.keys()) for o in out]
         return rankings, scores
     
+    def to(self, device):
+        pass
+    

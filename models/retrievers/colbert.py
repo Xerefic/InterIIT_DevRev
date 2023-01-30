@@ -102,8 +102,8 @@ class ColBertRetriever():
         qs_embeds, qs_masks = self.encode_query(questions)
         top_k = self.args.retriever.colbert_top_k
         
-        doc_vecs = self.para_embeds[theme]['document_vecs'].to(self.args.device)
-        doc_masks = self.para_embeds[theme]['document_mask'].to(self.args.device)
+        doc_vecs = self.para_embeds[theme]['document_vecs'].to(self.model.device)
+        doc_masks = self.para_embeds[theme]['document_mask'].to(self.model.device)
         n = len(doc_vecs)
         
         for i in range(len(questions)):
@@ -118,4 +118,7 @@ class ColBertRetriever():
             rankings.append(ids[:top_k])
             fin_scores.append([scores_map[idx] for idx in ids[:top_k]])
         return rankings, fin_scores
+    
+    def to(self, device):
+        self.model.to(device)
 

@@ -1,6 +1,6 @@
 from .retrievers import *
 
-class Retriever():
+class PassageRetriever():
     def __init__(self, args, df):
         self.args = args
         self.weights = dict(self.args.retriever.weights)
@@ -25,4 +25,9 @@ class Retriever():
             rankings.append(ranking)
             scores.append(score)
             weights.append(self.weights[e])
-        return self.voter.predict(rankings, scores, weights)
+        rankings, scores = self.voter.predict(rankings, scores, weights)
+        return rankings, scores
+    
+    def to(self, device):
+        for e in self.retrievers.keys():
+            self.retrievers[e].to(device)
