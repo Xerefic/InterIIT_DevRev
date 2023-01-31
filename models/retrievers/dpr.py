@@ -35,6 +35,7 @@ class DenseRetriever():
         return rankings, scores
     
     def to(self, device):
+        self.args.device = device
         self.model_Q.to(device)
         self.model_P.to(device)
         self.model_Q._target_device = device

@@ -16,11 +16,42 @@ class Pipeline():
     def __call__(self, questions, theme):
         rankings, scores = self.retriever.predict(questions, theme)
         outs = self.reader.predict(questions, rankings)
+<<<<<<< HEAD
         for out in outs:
+=======
+        for out,score in zip(outs,scores):
+            out['retrieval_score'] = score[0]
+>>>>>>> origin/Time_Profiling
             if out['answer']=='':
                 out['Para_id'] = -1
         return outs
     
+<<<<<<< HEAD
+=======
+    def time_profile(self, questions, theme):
+        fin_latencies = {}
+        
+        start = time.time()
+        rankings, scores,latencies = self.retriever.time_profile(questions, theme)
+        end = time.time()
+        fin_latencies.update(latencies)
+        
+        latencies['retrieval_latency'] = (end-start)*1000/len(questions)
+        
+        start = time.time()
+        outs,latencies = self.reader.time_profile(questions, rankings)
+        end = time.time()
+        fin_latencies.update(latencies)
+        
+        latencies['reader_latency'] = (end-start)*1000/len(questions)
+        
+        for out,score in zip(outs,scores):
+            out['retrieval_score'] = score[0]
+            if out['answer']=='':
+                out['Para_id'] = -1
+        return outs, fin_latencies
+    
+>>>>>>> origin/Time_Profiling
     def to(self, device):
         self.retriever.to(device)
         self.reader.to(device)
@@ -29,8 +60,20 @@ class Pipeline():
         joblib_path = os.path.join(self.args.checkpoints_dir, self.args.joblib_path)
         self.to(device)
         joblib.dump(self, joblib_path)
+<<<<<<< HEAD
 
 if __name__=="__main__":    
     
+=======
+        
+    @staticmethod
+    def load_from_checkpoint(args,device='cpu'):
+        joblib_path = os.path.join(args.checkpoints_dir, args.joblib_path)
+        pipe = joblib.load(joblib_path)
+        pipe.to(device)
+        return pipe
+
+if __name__=="__main__":    
+>>>>>>> origin/Time_Profiling
     args = TrainingArgs()
     pipeline = Pipeline(args)

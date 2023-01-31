@@ -44,6 +44,17 @@ class QuestionAnswering():
         return out
         # out_df = pd.DataFrame(out)
         # return out_df
+
+    def time_profile(self,questions,rankings):
+        latencies = {}
+        
+        start = time.time()
+        outs = self.predict(questions,rankings)
+        end = time.time()
+        
+        latencies['reader_latencies'] = (end-start)*1000/len(questions)
+        
+        return outs, latencies
     
     def to(self, device):
         if self.cuda_support and device!='cpu':
