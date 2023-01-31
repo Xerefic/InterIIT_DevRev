@@ -1,5 +1,4 @@
 from imports import *
-# to do handling Question generation for BM25
 # ranker - crossencoder + kimcnn
 
 
