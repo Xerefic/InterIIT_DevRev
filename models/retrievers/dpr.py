@@ -4,8 +4,9 @@ from utils import clean_text
 class DenseRetriever():
     def __init__(self, args, df):
         self.args = args
-        self.model_Q = SentenceTransformer(self.args.retriever.dpr_model_Q).to(self.args.device)
-        self.model_P = SentenceTransformer(self.args.retriever.dpr_model_P).to(self.args.device)
+        self.model_Q = SentenceTransformer(self.args.retriever.dpr_model_Q)
+        self.model_P = SentenceTransformer(self.args.retriever.dpr_model_P)
+        self.to(self.args.device)
         self.model_Q.eval()
         self.model_P.eval()
         

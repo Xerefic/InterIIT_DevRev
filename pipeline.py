@@ -57,6 +57,7 @@ class Pipeline():
         return outs, fin_latencies
     
     def to(self, device):
+        self.args.device = device
         self.retriever.to(device)
         self.reader.to(device)
         self.warmup()

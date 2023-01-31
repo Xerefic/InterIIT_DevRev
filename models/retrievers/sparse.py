@@ -9,6 +9,9 @@ class SparseRetriever():
 
     def fit(self, df):
         df = copy.deepcopy(df)
+        if 'GeneratedQuestions' in df.columns:
+            df.Paragraph = df.Paragraph + ' ' + df.GeneratedQuestions.apply(lambda x: ' '.join(x))
+        
         cols = ['Para_id', 'Paragraph', 'Theme']
         assert df.columns.isin(cols).sum()==3 , "Verify Para_id, Paragraph, Theme are in the columns"
     

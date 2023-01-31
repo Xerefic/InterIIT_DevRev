@@ -55,7 +55,8 @@ class ColBertRetriever():
     def __init__(self, args, df):
         self.args = args
         self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased") 
-        self.model = ColBERT.from_pretrained("sebastian-hofstaetter/colbert-distilbert-margin_mse-T2-msmarco").to(self.args.device)
+        self.model = ColBERT.from_pretrained(self.args.retriever.colbert_model_name)
+        self.to(self.args.device)
         self.model.eval()
         
         self.fit(df)

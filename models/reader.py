@@ -14,7 +14,7 @@ class QuestionAnswering():
             self.model = transformers_pipeline("question-answering", model=model_name, tokenizer=model_name, device=device)
         else:
             self.cuda_support = False
-            self.model = self.load_optimized()    
+            self.model = self.load_optimized()
         
     def load_optimized(self):
         model = ORTModelForQuestionAnswering.from_pretrained(self.args.reader.model_name, from_transformers=True) # Load onnx model
@@ -32,7 +32,7 @@ class QuestionAnswering():
     def fit(self, df):
         paras = df.loc[:,['Para_id','Paragraph']].drop_duplicates().set_index('Para_id',drop=True)
         self.para_lookup = dict(zip(paras.index,paras.Paragraph))
-        
+         
     def predict(self, questions, rankings):
         context = [self.para_lookup[retrieved[0]] for retrieved in rankings]
         out = self.model(question=questions, context=context, handle_impossible_answer=True, 
