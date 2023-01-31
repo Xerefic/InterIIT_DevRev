@@ -45,14 +45,14 @@ class QuestionAnswering():
         # out_df = pd.DataFrame(out)
         # return out_df
 
-    def time_profile(self,questions,rankings):
+    def time_profile(self, questions, rankings):
         latencies = {}
         
         start = time.time()
         outs = self.predict(questions,rankings)
         end = time.time()
         
-        latencies['reader_latencies'] = (end-start)*1000/len(questions)
+        latencies['reader_latency'] = (end-start)*1000/len(questions)
         
         return outs, latencies
     
