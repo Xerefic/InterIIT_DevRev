@@ -1,4 +1,5 @@
 from imports import *
+# optimization
 # ranker - crossencoder + kimcnn
 
 
@@ -21,8 +22,10 @@ class RetrieverArgs:
     colbert_qn_maxlength: int = 40
     colbert_top_k: int = 100
     
-    weights = (['bm25', 0.33], ['dpr', 0.33, ], ['colbert', 0.33])
+    weights: tuple = (['bm25', 0.33], ['dpr', 0.33, ], ['colbert', 0.33])
     voting_top_k: int = 5
+    
+    ranker_treshold: float = 0.6
     
 @dataclass
 class ReaderArgs:
