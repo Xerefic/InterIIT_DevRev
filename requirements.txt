@@ -1,6 +1,5 @@
 numpy
-pandas
-pyprind
+pandas==1.5.3
 gdown
 torch
 torchtext

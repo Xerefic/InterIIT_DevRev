@@ -19,7 +19,6 @@ import unidecode
 from ast import literal_eval
 
 import tqdm
-import pyprind
 
 import itertools
 import collections
