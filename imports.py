@@ -48,6 +48,7 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 from sentence_transformers.util import semantic_search
 from datasets import load_dataset
 
+import onnxruntime
 from optimum.onnxruntime import ORTOptimizer, ORTModelForQuestionAnswering
 from optimum.onnxruntime.configuration import OptimizationConfig
 from optimum.pipelines import pipeline as optimum_pipeline
