@@ -75,7 +75,8 @@ class ColBertRetriever():
         masks = []
         for i in range(0, len(paras), batch_size):
             batch = self.tokenizer(paras[i:i+batch_size], return_tensors='pt', padding='max_length',
-                                  truncation=True, max_length=self.args.retriever.colbert_para_maxlength).to(self.args.device)
+                                  truncation=True, max_length=self.args.retriever.colbert_para_maxlength
+                                  ).to(self.model.device)
             para_embeds.append(self.model.forward_representation(batch).cpu())
             masks.append(batch['attention_mask'].cpu())
         para_embeds = torch.concat(para_embeds, dim=0)
@@ -89,7 +90,7 @@ class ColBertRetriever():
         masks = []
         for i in range(0,len(qs),batch_size):
             batch = self.tokenizer(qs[i:i+batch_size], return_tensors='pt', padding=True, 
-                                   truncation=True, max_length=40).to(self.args.device)
+                                   truncation=True, max_length=40).to(self.model.device)
             qs_embeds.extend(self.model.forward_representation(batch).cpu())
             masks.extend(batch['attention_mask'].cpu())
         qs_embeds = [q.unsqueeze(0) for q in qs_embeds]
@@ -108,8 +109,8 @@ class ColBertRetriever():
         
         for i in range(len(questions)):
             q, m = torch.concat([qs_embeds[i]]*n,0), torch.concat([qs_masks[i]]*n,0)
-            q = q.to(self.args.device)
-            m = m.to(self.args.device)
+            q = q.to(self.model.device)
+            m = m.to(self.model.device)
             
             scores = self.model.forward_aggregation(query_vecs=q, query_mask=m, document_vecs = doc_vecs, document_mask = doc_masks).detach().cpu().numpy()
             ids = copy.deepcopy(self.para_embeds[theme]['para_ids'])
@@ -120,5 +121,6 @@ class ColBertRetriever():
         return rankings, fin_scores
     
     def to(self, device):
+        self.args.device = device
         self.model.to(device)
 
