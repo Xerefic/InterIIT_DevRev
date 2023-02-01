@@ -50,3 +50,11 @@ class PassageRetriever():
     def to(self, device):
         for e in self.retrievers.keys():
             self.retrievers[e].to(device)
+            
+    def load_torch(self):
+        for e in self.retrievers.keys():
+            self.retrievers[e].load_torch()
+            
+    def load_onnx(self):
+        for e in self.retrievers.keys():
+            self.retrievers[e].load_onnx()

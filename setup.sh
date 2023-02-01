@@ -4,3 +4,4 @@
 # chown -R daemon:daemon elasticsearch-7.9.2
 
 pip3 install -r requirements.txt
+spacy download en_core_web_md

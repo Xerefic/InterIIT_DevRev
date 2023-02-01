@@ -63,9 +63,18 @@ class Pipeline():
         self.warmup()
     
     def dump(self, device='cpu'):
+        self.load_torch()
         joblib_path = os.path.join(self.args.checkpoints_dir, self.args.joblib_path)
         self.to(device)
         joblib.dump(self, joblib_path)
+        
+    def load_torch(self):
+        self.retriever.load_torch()
+        self.reader.load_torch()
+        
+    def load_onnx(self):
+        self.retriever.load_onnx()
+        self.reader.load_onnx()
         
     @staticmethod
     def load_from_checkpoint(args, device='cpu'):

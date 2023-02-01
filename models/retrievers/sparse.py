@@ -38,3 +38,9 @@ class SparseRetriever():
     def to(self, device):
         pass
     
+    def load_torch(self):
+        pass
+    
+    def load_onnx(self):
+        pass
+    

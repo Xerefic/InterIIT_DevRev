@@ -45,7 +45,7 @@ class GeneratorArgs:
 
 @dataclass
 class TrainingArgs:
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
     num_workers: int = os.cpu_count()
     
     generator = GeneratorArgs()

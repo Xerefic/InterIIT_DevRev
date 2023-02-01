@@ -2,32 +2,13 @@ from imports import *
 
 class QuestionAnswering():
     def __init__(self, args, df):
-        self.args = args
+        self.args = args        
+        if self.args.device=='cpu':
+            self.load_onnx()
+        elif self.args.device=='cuda':
+            self.load_torch()
         
-        self.load_model(model_name=self.args.reader.model_name)
         self.fit(df)
-        
-    def load_model(self, model_name):
-        if not self.args.reader.onnx:
-            self.cuda_support = True
-            device = 0 if self.args.device=='cuda' else -1
-            self.model = transformers_pipeline("question-answering", model=model_name, tokenizer=model_name, device=device)
-        else:
-            self.cuda_support = False
-            self.model = self.load_optimized()
-        
-    def load_optimized(self):
-        model = ORTModelForQuestionAnswering.from_pretrained(self.args.reader.model_name, from_transformers=True) # Load onnx model
-        tokenizer = AutoTokenizer.from_pretrained(self.args.reader.model_name)
-        
-        optimizer = ORTOptimizer.from_pretrained(model)
-        optimization_config = OptimizationConfig(optimization_level=99)
-        optimizer.optimize(save_dir='temp', optimization_config=optimization_config)
-        
-        model = ORTModelForQuestionAnswering.from_pretrained('temp')
-        os.system('rm -r temp')
-        pipe = opt_pipeline("question-answering", model=model, tokenizer=tokenizer)
-        return pipe
             
     def fit(self, df):
         paras = df.loc[:,['Para_id','Paragraph']].drop_duplicates().set_index('Para_id',drop=True)
@@ -57,9 +38,30 @@ class QuestionAnswering():
         return outs, latencies
     
     def to(self, device):
-        if self.cuda_support and device!='cpu':
-            device = -1
-            model = self.model.model
-            tokenizer = self.model.tokenizer
-            self.model = transformers_pipeline("question-answering", model=model, tokenizer=tokenizer, device=device)
-        self.model(question=['dummy'], context=['dummy'], handle_impossible_answer=True)
+        if self.backend=='torch':
+            device = 0 if device=='cuda' else -1
+            model_name = self.args.reader.model_name
+            self.model = transformers_pipeline("question-answering", model=model_name, tokenizer=model_name, device=device)
+            self.model(question=['dummy'], context=['dummy'], handle_impossible_answer=True)
+            
+    def load_torch(self):
+        if self.backend=='onnx':
+            self.backend = 'torch'
+            model_name = self.args.reader.model_name
+            device = 0 if device=='cuda' else -1
+            self.model = transformers_pipeline("question-answering", model=model_name, tokenizer=model_name, device=device)
+        
+    def load_onnx(self):
+        if self.backend=='torch':
+            self.backend = 'onnx'
+            model = ORTModelForQuestionAnswering.from_pretrained(self.args.reader.model_name, from_transformers=True) # Load onnx model
+            tokenizer = AutoTokenizer.from_pretrained(self.args.reader.model_name)
+
+            optimizer = ORTOptimizer.from_pretrained(model)
+            optimization_config = OptimizationConfig(optimization_level=99)
+            optimizer.optimize(save_dir='temp', optimization_config=optimization_config)
+
+            model = ORTModelForQuestionAnswering.from_pretrained('temp')
+            os.system('rm -r temp')
+            pipe = optimum_pipeline("question-answering", model=model, tokenizer=tokenizer)
+            self.model = pipe

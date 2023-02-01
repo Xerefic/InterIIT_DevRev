@@ -55,7 +55,7 @@ class GenerateQuestions:
         self.fit()
         end = time.time()
         
-        latencies['generator'] = (end-start)*1000/len(questions)
+        latencies['generator'] = (end-start)*1000/self.df.Paragraph.nunique()
         
         return latencies
     
