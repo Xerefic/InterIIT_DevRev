@@ -41,6 +41,8 @@ class GeneratorArgs:
     top_p: float = 0.98
     num_return_sequences: int = 2
     max_length_query: int = 64
+    file_path: str = 'testset_A.csv'
+    save_file: str = 'test_set_A_qn_generated.csv'
     
 
 @dataclass

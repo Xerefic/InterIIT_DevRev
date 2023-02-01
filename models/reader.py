@@ -2,7 +2,8 @@ from imports import *
 
 class QuestionAnswering():
     def __init__(self, args, df):
-        self.args = args        
+        self.args = args
+        self.backend = None
         if self.args.device=='cpu':
             self.load_onnx()
         elif self.args.device=='cuda':
@@ -45,14 +46,14 @@ class QuestionAnswering():
             self.model(question=['dummy'], context=['dummy'], handle_impossible_answer=True)
             
     def load_torch(self):
-        if self.backend=='onnx':
+        if self.backend!='torch':
             self.backend = 'torch'
             model_name = self.args.reader.model_name
-            device = 0 if device=='cuda' else -1
+            device = 0 if self.args.device=='cuda' else -1
             self.model = transformers_pipeline("question-answering", model=model_name, tokenizer=model_name, device=device)
         
     def load_onnx(self):
-        if self.backend=='torch':
+        if self.backend!='onnx':
             self.backend = 'onnx'
             model = ORTModelForQuestionAnswering.from_pretrained(self.args.reader.model_name, from_transformers=True) # Load onnx model
             tokenizer = AutoTokenizer.from_pretrained(self.args.reader.model_name)

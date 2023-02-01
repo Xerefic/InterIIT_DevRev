@@ -14,4 +14,3 @@ optimum
 onnx
 optuna
 ranx
-onnxruntime-gpu

@@ -4,6 +4,7 @@ from utils import clean_text
 class DenseRetriever():
     def __init__(self, args, df):
         self.args = args
+        self.backend = None
         if self.args.device=='cpu':
             self.load_onnx()
         elif self.args.device=='cuda':
@@ -43,14 +44,14 @@ class DenseRetriever():
             self.model_Q._target_device = device
         
     def load_torch(self):
-        if self.backend=='onnx':
+        if self.backend!='torch':
             self.backend = 'torch'
             self.model_Q = SentenceTransformer(self.args.retriever.dpr_model_Q)
             self.to(self.args.device)
             self.model_Q.eval()
             
     def load_onnx(self):
-        if self.backend=='torch':
+        if self.backend!='onnx':
             self.backend = 'onnx'
             self.model_Q = sentence_transformers_onnx(self.model_Q, 'temp')
             os.system('rm -rf temp')

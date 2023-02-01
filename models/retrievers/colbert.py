@@ -32,23 +32,14 @@ class ColBERT(PreTrainedModel):
         vecs = self.compressor(vecs)
         return vecs
 
-    # def forward(self, query, document):
-        # query_vecs = self.forward_representation(query)
-        # document_vecs = self.forward_representation(document)
-        # score = self.forward_aggregation(query_vecs,document_vecs, query["attention_mask"], document["attention_mask"])
-        
-        # return score
 
     def forward_representation(self, tokens, sequence_type=None):
-        # vecs = self.bert_model(**tokens)[0]
-        # vecs = self.compressor(vecs)
         vecs = self.forward(**tokens)
         if sequence_type == "doc_encode" or sequence_type == "query_encode": 
             vecs = vecs * tokens["tokens"]["mask"].unsqueeze(-1)
         return vecs
 
     def forward_aggregation(self, query_vecs, document_vecs, query_mask, document_mask, **kwargs):
-        # print(query_vecs.shape,document_vecs.transpose(2,1).shape)
         score = torch.bmm(query_vecs, document_vecs.transpose(2,1))
         exp_mask = document_mask.bool().unsqueeze(1).expand(-1, score.shape[1],-1)
         score[~exp_mask] = - 10000
@@ -73,15 +64,12 @@ class ColBertOnnx():
         return vecs
 
     def forward_representation(self, tokens, sequence_type=None):
-        # vecs = self.bert_model(**tokens)[0]
-        # vecs = self.compressor(vecs)
         vecs = self.forward(**tokens)
         if sequence_type == "doc_encode" or sequence_type == "query_encode": 
             vecs = vecs * tokens["tokens"]["mask"].unsqueeze(-1)
         return vecs
 
     def forward_aggregation(self, query_vecs, document_vecs, query_mask, document_mask, **kwargs):
-        # print(query_vecs.shape,document_vecs.transpose(2,1).shape)
         score = torch.bmm(query_vecs, document_vecs.transpose(2,1))
         exp_mask = document_mask.bool().unsqueeze(1).expand(-1, score.shape[1],-1)
         score[~exp_mask] = - 10000
@@ -96,6 +84,7 @@ class ColBertRetriever():
     def __init__(self, args, df):
         self.args = args
         self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+        self.backend = None
         if self.args.device=='cpu':
             self.load_onnx()
         elif self.args.device=='cuda':
@@ -181,13 +170,13 @@ class ColBertRetriever():
             self.model.to(device)
 
     def load_torch(self):
-        if self.backend=='onnx':
+        if self.backend!='torch':
             self.backend = 'torch'
             self.model = ColBERT.from_pretrained(self.args.retriever.colbert_model_name)
             self.to(self.args.device)
             self.model.eval()   
             
     def load_onnx(self):
-        if self.backend=='torch':
+        if self.backend!='onnx':
             self.backend = 'onnx'
             self.model = ColBertOnnx(self.model, self.tokenizer)
