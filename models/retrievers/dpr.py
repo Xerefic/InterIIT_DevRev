@@ -6,6 +6,7 @@ class DenseRetriever():
         self.args = args
         self.backend = None
         if self.args.device=='cpu':
+            self.load_torch()
             self.load_onnx()
         elif self.args.device=='cuda':
             self.load_torch()
@@ -53,7 +54,7 @@ class DenseRetriever():
     def load_onnx(self):
         if self.backend!='onnx':
             self.backend = 'onnx'
-            self.model_Q = sentence_transformers_onnx(self.model_Q, 'temp')
+            self.model_Q = sentence_transformers_onnx(self.args,self.model_Q, 'temp')
             os.system('rm -rf temp')
             os.system('rm temp.onnx')
             
@@ -102,9 +103,8 @@ class OnnxEncoder:
 
         return sentence_embedding.numpy()
     
-def sentence_transformers_onnx(model, path, do_lower_case=True, input_names=["input_ids", "attention_mask", "segment_ids"],
-        providers=["CPUExecutionProvider"]):
-
+def sentence_transformers_onnx(args,model, path, do_lower_case=True, input_names=["input_ids", "attention_mask", "segment_ids"]):
+        providers = [args.onnx_provider]
         model.save(path)
         configuration = AutoConfig.from_pretrained(path, from_tf=False, local_files_only=True)
         tokenizer = AutoTokenizer.from_pretrained(path, do_lower_case=do_lower_case, from_tf=False, local_files_only=True)
@@ -130,6 +130,11 @@ def sentence_transformers_onnx(model, path, do_lower_case=True, input_names=["in
                     "end": symbolic_names,
                 },
             )
+            _model = onnx.load(f"{path}.onnx")
+            # model_simp, check = onnx_simplify(_model)
+            if args.onnx_float16:
+                _model = convert_float_to_float16(_model)
+            onnx.save(_model,f"{path}.onnx")
 
             normalization = None
             for modules in model.modules():
@@ -139,6 +144,8 @@ def sentence_transformers_onnx(model, path, do_lower_case=True, input_names=["in
                     if idx == 2:
                         normalization = module
                 break
-
-            return OnnxEncoder(session=onnxruntime.InferenceSession(f"{path}.onnx", providers=providers),
+            sess_options = onnxruntime.SessionOptions()
+            # sess_options.execution_mode  = onnxruntime.ExecutionMode.ORT_PARALLEL
+            # sess_options.inter_op_num_threads = args.n_jobs
+            return OnnxEncoder(session=onnxruntime.InferenceSession(f"{path}.onnx", sess_options,providers=providers),
                 tokenizer=tokenizer, pooling=pooling, normalization=normalization,)

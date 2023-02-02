@@ -73,6 +73,7 @@ class Pipeline():
         self.reader.load_torch()
         
     def load_onnx(self):
+        self.to('cpu')
         self.retriever.load_onnx()
         self.reader.load_onnx()
         

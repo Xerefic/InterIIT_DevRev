@@ -50,12 +50,18 @@ class ColBERT(PreTrainedModel):
     
 
 class ColBertOnnx():
-    def __init__(self, model, tokenizer):
+    def __init__(self, args,model, tokenizer):
         features = dict(tokenizer(['dummy'], return_tensors='pt'))
         torch.onnx.export(model, features, 'temp.onnx', dynamic_axes={'input_ids':[0, 1], 'attention_mask':[0, 1]}, 
                           input_names=['input_ids', 'attention_mask'])
         
-        self.model = onnxruntime.InferenceSession('temp.onnx')
+        _model = onnx.load('temp.onnx')
+        # model_simp, check = onnx_simplify(_model)
+        if args.onnx_float16:
+            _model = convert_float_to_float16(_model)
+        onnx.save(_model,'temp.onnx')
+        sess_options = onnxruntime.SessionOptions()
+        self.model = onnxruntime.InferenceSession('temp.onnx',sess_options,providers=[args.onnx_provider])
         self.device = 'cpu'
         os.system('rm temp.onnx')
     
@@ -86,6 +92,7 @@ class ColBertRetriever():
         self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
         self.backend = None
         if self.args.device=='cpu':
+            self.load_torch()
             self.load_onnx()
         elif self.args.device=='cuda':
             self.load_torch()
@@ -135,7 +142,7 @@ class ColBertRetriever():
             except:
                 qs_embeds.extend(self.model.forward_representation(batch)[0])
                 masks.extend(batch['attention_mask'])
-        qs_embeds = [torch.tensor(q).unsqueeze(0) for q in qs_embeds]
+        qs_embeds = [torch.tensor(q).unsqueeze(0).float() for q in qs_embeds]
         masks = [torch.tensor(m).unsqueeze(0) for m in masks]
         # qs_embeds = [q.unsqueeze(0) for q in qs_embeds]
         # masks = [m.unsqueeze(0) for m in masks]
@@ -150,7 +157,6 @@ class ColBertRetriever():
         doc_vecs = self.para_embeds[theme]['document_vecs'].to(self.model.device)
         doc_masks = self.para_embeds[theme]['document_mask'].to(self.model.device)
         n = len(doc_vecs)
-        
         for i in range(len(questions)):
             q, m = torch.concat([qs_embeds[i]]*n,0), torch.concat([qs_masks[i]]*n,0)
             q = q.to(self.model.device)
@@ -179,4 +185,4 @@ class ColBertRetriever():
     def load_onnx(self):
         if self.backend!='onnx':
             self.backend = 'onnx'
-            self.model = ColBertOnnx(self.model, self.tokenizer)
+            self.model = ColBertOnnx(self.args,self.model, self.tokenizer)

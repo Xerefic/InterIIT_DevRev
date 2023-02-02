@@ -48,7 +48,9 @@ class GeneratorArgs:
 @dataclass
 class TrainingArgs:
     device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-    num_workers: int = os.cpu_count()
+    n_jobs: int = os.cpu_count()
+    onnx_provider: str = "CPUExecutionProvider"
+    onnx_float16: bool = False
     
     generator = GeneratorArgs()
     retriever = RetrieverArgs()

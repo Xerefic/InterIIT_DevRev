@@ -55,14 +55,14 @@ class QuestionAnswering():
     def load_onnx(self):
         if self.backend!='onnx':
             self.backend = 'onnx'
-            model = ORTModelForQuestionAnswering.from_pretrained(self.args.reader.model_name, from_transformers=True) # Load onnx model
+            model = ORTModelForQuestionAnswering.from_pretrained(self.args.reader.model_name, from_transformers=True,provider=self.args.onnx_provider) # Load onnx model
             tokenizer = AutoTokenizer.from_pretrained(self.args.reader.model_name)
 
             optimizer = ORTOptimizer.from_pretrained(model)
             optimization_config = OptimizationConfig(optimization_level=99)
             optimizer.optimize(save_dir='temp', optimization_config=optimization_config)
 
-            model = ORTModelForQuestionAnswering.from_pretrained('temp')
+            model = ORTModelForQuestionAnswering.from_pretrained('temp',provider=self.args.onnx_provider)
             os.system('rm -r temp')
             pipe = optimum_pipeline("question-answering", model=model, tokenizer=tokenizer)
             self.model = pipe

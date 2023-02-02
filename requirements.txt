@@ -12,6 +12,8 @@ unidecode
 sentence_transformers
 optimum
 onnx
+onnxsim
 optuna
 ranx
-onnxruntime-gpu
+onnxruntime
+onnxconverter_common

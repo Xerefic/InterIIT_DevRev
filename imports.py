@@ -38,7 +38,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from elasticsearch import Elasticsearch
+# from elasticsearch import Elasticsearch
 from retriv import SearchEngine
 # from ranx import compare, evaluate, fuse, optimize_fuse, Qrels, Run
 
@@ -52,7 +52,11 @@ import onnxruntime
 from optimum.onnxruntime import ORTOptimizer, ORTModelForQuestionAnswering
 from optimum.onnxruntime.configuration import OptimizationConfig
 from optimum.pipelines import pipeline as optimum_pipeline
-import optuna  
+import optuna
+import onnx
+from onnxsim import simplify as onnx_simplify
+from onnxconverter_common import convert_float_to_float16
+
 
 import logging
 import warnings
