@@ -27,6 +27,7 @@ class ColBERT(PreTrainedModel):
 
         self.compressor = torch.nn.Linear(self.bert_model.config.hidden_size, cfg.compression_dim)
     
+    @torch.inference_mode()
     def forward(self, input_ids, attention_mask):
         vecs = self.bert_model(input_ids=input_ids, attention_mask=attention_mask)[0]
         vecs = self.compressor(vecs)

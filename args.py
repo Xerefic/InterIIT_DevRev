@@ -26,7 +26,7 @@ class RetrieverArgs:
     voting_top_k: int = 5
     
     ranker_treshold: float = 0
-    use_ranker: bool = True
+    use_ranker: bool = False
     ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-4-v2'
     ranker_batch_size: int = 8
     
