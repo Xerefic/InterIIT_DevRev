@@ -71,11 +71,13 @@ class Pipeline():
     def load_torch(self):
         self.retriever.load_torch()
         self.reader.load_torch()
+        self.warmup()
         
     def load_onnx(self):
         self.to('cpu')
         self.retriever.load_onnx()
         self.reader.load_onnx()
+        self.warmup()
         
     @staticmethod
     def load_from_checkpoint(args, device='cpu'):

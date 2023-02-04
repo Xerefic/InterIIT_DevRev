@@ -42,7 +42,7 @@ import torch.optim as optim
 from retriv import SearchEngine
 # from ranx import compare, evaluate, fuse, optimize_fuse, Qrels, Run
 
-from transformers import AutoConfig, AutoTokenizer, AutoModel, AutoModelWithLMHead, PreTrainedModel, PretrainedConfig, AutoModelForQuestionAnswering
+from transformers import AutoConfig, AutoTokenizer, AutoModel, AutoModelWithLMHead, AutoModelForSequenceClassification, PreTrainedModel, PretrainedConfig, AutoModelForQuestionAnswering
 from transformers import pipeline as transformers_pipeline
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from sentence_transformers.util import semantic_search

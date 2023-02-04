@@ -3,30 +3,32 @@ from imports import *
 class GenerateQuestions:
     def __init__(self, args):
         self.args = args
-        file_path = os.path.join(self.args.data_dir, self.args.file_path)
+        file_path = os.path.join(self.args.data_dir, self.args.generator.file_path)
         self.df = pd.read_csv(file_path)
         
-        self.df =  self.df[self.df.Theme.isin(self.df.Theme.sample(5))]
+        # self.df =  self.df[self.df.Theme.isin(self.df.Theme.sample(5))]
         
         self.question_bank = defaultdict(list)
         
         self.tokenizer = AutoTokenizer.from_pretrained(self.args.generator.model_name)
         self.model = AutoModelWithLMHead.from_pretrained(self.args.generator.model_name)
+        self.model.eval()
         self.to(self.args.device)
         
         self.nlp = spacy.load('en_core_web_md')
         
         
-    def generate_candidates(self, text):
+    def generate_candidates(self, text,noun_chunks=True,ents=True):
         chunks = []
-        for n in self.nlp(text).noun_chunks:
-            chunk = ' '.join(token.text for token in n )
-            if chunk:
-                chunks.append(chunk)
-
-        for ent in self.nlp(text).ents:
-            chunks.append(ent.text)
-        chunks = list(set(chunks))
+        if noun_chunks:
+            for n in self.nlp(text).noun_chunks:
+                chunk = ' '.join(token.text for token in n )
+                if chunk:
+                    chunks.append(chunk)
+        if ents:
+            for ent in self.nlp(text).ents:
+                chunks.append(ent.text)
+            chunks = list(set(chunks))
         return list(set(chunks))
     
     @torch.inference_mode()

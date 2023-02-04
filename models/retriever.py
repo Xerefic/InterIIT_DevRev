@@ -18,6 +18,7 @@ class PassageRetriever():
                 raise NotImplementedError(f'{e} not implemented!')
             
         self.voter = Voter(self.args, df)
+        self.ranker = ReRanker(self.args, df)
         
     def predict(self, questions, theme):
         rankings, scores, weights = [], [], []
@@ -27,7 +28,11 @@ class PassageRetriever():
             scores.append(score)
             weights.append(self.weights[e])
         rankings, scores = self.voter.predict(rankings, scores, weights)
-        return rankings, scores
+        if self.args.retriever.use_ranker:
+            fin_rankings, fin_scores = self.ranker.predict(questions, rankings)
+            return fin_rankings, fin_scores
+        else:
+            return rankings, scores
     
     def time_profile(self,questions,theme):
         rankings, scores, weights, latencies = [], [], [], {}
@@ -45,16 +50,24 @@ class PassageRetriever():
         rankings, scores = self.voter.predict(rankings, scores, weights)
         end = time.time()
         latencies['voting_latency'] = (end-start)*1000/len(questions)
-        return rankings, scores, latencies
+        start = time.time()
+        fin_rankings, fin_scores = self.ranker.predict(questions, rankings)
+        end = time.time()
+        latencies['ranker_latency'] = (end-start)*1000/len(questions)
+        
+        return fin_rankings, fin_scores, latencies
     
     def to(self, device):
         for e in self.retrievers.keys():
             self.retrievers[e].to(device)
+        self.ranker.to(device)
             
     def load_torch(self):
         for e in self.retrievers.keys():
             self.retrievers[e].load_torch()
+        self.ranker.load_torch()
             
     def load_onnx(self):
         for e in self.retrievers.keys():
             self.retrievers[e].load_onnx()
+        self.ranker.load_onnx()

@@ -9,28 +9,31 @@ class RetrieverArgs:
     
     k1: float = 3
     b: float = 0.75
-    sparse_top_k: int = 100
+    sparse_top_k: int = 300 
     
     dpr_batch_size: int = 32
     dpr_model_Q: str = 'flax-sentence-embeddings/multi-QA_v1-mpnet-asymmetric-Q'
     dpr_model_P: str = 'flax-sentence-embeddings/multi-QA_v1-mpnet-asymmetric-A'
-    dpr_top_k: int = 100
+    dpr_top_k: int = 300
     
     colbert_batch_size: int = 32
     colbert_model_name: str = "sebastian-hofstaetter/colbert-distilbert-margin_mse-T2-msmarco"
     colbert_para_maxlength: int = 300
     colbert_qn_maxlength: int = 40
-    colbert_top_k: int = 100
+    colbert_top_k: int = 300
     
-    weights: tuple = (['bm25', 0.33], ['dpr', 0.33, ], ['colbert', 0.33])
+    weights: tuple = (['bm25', 0.3], ['dpr', 0.2], ['colbert', 0.5])
     voting_top_k: int = 5
     
-    ranker_treshold: float = 0.6
+    ranker_treshold: float = 0
+    use_ranker: bool = True
+    ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-4-v2'
+    ranker_batch_size: int = 8
     
 @dataclass
 class ReaderArgs:
     onnx: bool = False  # onnx cpu only
-    model_name: str = "deepset/tinyroberta-squad2"
+    model_name: str = "bhadresh-savani/electra-base-squad2" #"deepset/tinyroberta-squad2"
     batch_size: int = 32
     max_seq_len: int = 400
     
@@ -59,5 +62,5 @@ class TrainingArgs:
     root_dir: str = './'
     checkpoints_dir: str = f'{root_dir}/checkpoints/'
     data_dir: str = f'{root_dir}/data/'
-    file_path: str = 'testset_A.csv'
+    file_path: str = 'testset_A_with_qns.csv'
     joblib_path: str = 'pipeline.joblib'

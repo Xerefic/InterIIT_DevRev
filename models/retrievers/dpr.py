@@ -16,6 +16,7 @@ class DenseRetriever():
     def fit(self, df):
         batch_size = self.args.retriever.dpr_batch_size
         model_P = SentenceTransformer(self.args.retriever.dpr_model_P).to(self.args.device)
+        df = copy.deepcopy(df)
         cols = ['Para_id', 'Paragraph', 'Theme']
         assert df.columns.isin(cols).sum()==3 , "Verify Para_id, Paragraph, Theme are in the columns"
         
@@ -54,7 +55,7 @@ class DenseRetriever():
     def load_onnx(self):
         if self.backend!='onnx':
             self.backend = 'onnx'
-            self.model_Q = sentence_transformers_onnx(self.args,self.model_Q, 'temp')
+            self.model_Q = sentence_transformers_onnx_reader(self.args,self.model_Q, 'temp')
             os.system('rm -rf temp')
             os.system('rm temp.onnx')
             
@@ -87,7 +88,6 @@ class OnnxEncoder:
                 return_tensors="pt",
             ).items()
         }
-
         hidden_state = self.session.run(None, inputs)
         sentence_embedding = self.pooling.forward(
             features={ "token_embeddings": torch.Tensor(hidden_state[0]), "attention_mask": torch.Tensor(inputs.get("attention_mask")),},
@@ -103,7 +103,7 @@ class OnnxEncoder:
 
         return sentence_embedding.numpy()
     
-def sentence_transformers_onnx(args,model, path, do_lower_case=True, input_names=["input_ids", "attention_mask", "segment_ids"]):
+def sentence_transformers_onnx_reader(args, model, path, do_lower_case=True, input_names=["input_ids", "attention_mask", "segment_ids"]):
         providers = [args.onnx_provider]
         model.save(path)
         configuration = AutoConfig.from_pretrained(path, from_tf=False, local_files_only=True)
