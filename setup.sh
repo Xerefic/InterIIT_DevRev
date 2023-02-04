@@ -5,3 +5,4 @@
 
 pip3 install -r requirements.txt
 spacy download en_core_web_md
+mkdir checkpoints data saves
