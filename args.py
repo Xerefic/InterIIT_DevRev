@@ -25,8 +25,9 @@ class RetrieverArgs:
     weights: tuple = (['bm25', 0.3], ['dpr', 0.2], ['colbert', 0.5])
     voting_top_k: int = 5
     
-    ranker_treshold: float = 0
+    ranker_treshold_path: str = 'coefficients.json'
     use_ranker: bool = False
+    reranker: str = 'cross-encoder'
     ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-4-v2'
     ranker_batch_size: int = 8
     
@@ -63,4 +64,5 @@ class TrainingArgs:
     checkpoints_dir: str = f'{root_dir}/checkpoints/'
     data_dir: str = f'{root_dir}/data/'
     file_path: str = 'testset_A_with_qns.csv'
+    saves_path: str = f'{root_dir}/saves/'
     joblib_path: str = 'pipeline.joblib'

@@ -1,7 +1,11 @@
 .DS_Store
 data/
 *.ipynb
+*.onnx
+*.pth
 checkpoints/
+saves/
+test/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

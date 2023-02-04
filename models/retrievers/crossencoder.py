@@ -22,9 +22,13 @@ class ReRanker():
         self.para_id_to_paras = dict(zip(df.index, df.Paragraph))
         
     def predict(self, questions, rankings, **kwargs):
+        if theme:
+            model = self.get_theme_model(theme)
+        else:
+            model = self.model
         batch_size = self.args.retriever.ranker_batch_size
         pairs = [(q, self.para_id_to_paras[p])  for q, ranking in zip(questions, rankings) for p in ranking]
-        scores = self.model.predict(pairs, batch_size=batch_size)
+        scores = model.predict(pairs, batch_size=batch_size)
         indices = [0]+[len(pred) for pred in rankings]
         indices = np.cumsum(indices)
         fin_rankings, fin_scores = [], []
@@ -39,7 +43,26 @@ class ReRanker():
         if self.backend=='torch':
             self.args.device = device
             self.model._target_device = device
-        
+            
+    def get_theme_model(self, theme):
+        theme = re.sub("\.", "", theme)
+        if self.backend=='torch':
+            model_path = os.path.join(self.args.saves_path, f'crossencoder_{theme}.pth')
+            if os.path.exists(model_path):
+                theme_model = CrossEncoder(model_path)
+            else:
+                theme_model = self.model
+            self.to(self.args.device)
+        elif self.backend=='onnx':
+            tokenizer = self.model.tokenizer
+            model_path = os.path.join(self.args.saves_path, f'crossencoder_{theme}.onnx')
+            if os.path.exists(model_path):
+                theme_model = OnnxRanker(session=onnxruntime.InferenceSession(model_path, onnxruntime.SessionOptions(),
+                                                              providers=[self.args.onnx_provider]), tokenizer=tokenizer, args=self.args)
+            else:
+                theme_model = self.model
+        return theme_model
+            
     def load_torch(self):
         if self.backend!='torch':
             self.backend = 'torch'
