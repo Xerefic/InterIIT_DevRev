@@ -44,13 +44,14 @@ class ReRanker():
             self.args.device = device
             self.model._target_device = device
             
-    def load_theme_model(self,theme,backend='onnx'):
+    def load_theme_model(self, theme, backend='onnx'):
         backend = 'pth' if backend=='torch' else backend
         model_path = os.path.join(self.args.saves_path, f'crossencoder_{theme}.{backend}')
         if not os.path.exists(model_path):return
         if backend=='onnx':
             self.model = OnnxRanker(session=onnxruntime.InferenceSession(model_path, onnxruntime.SessionOptions(),
-                                                              providers=[self.args.onnx_provider]), tokenizer = self.model.tokenizer, args=self.args)
+                                    providers=[self.args.onnx_provider]), 
+                                    tokenizer = self.model.tokenizer, args=self.args)
             print(f'loaded {theme}')
         
         if backend=='torch':

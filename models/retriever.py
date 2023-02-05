@@ -9,6 +9,8 @@ class PassageRetriever():
         if os.path.exists(threshold_path):
             with open(threshold_path) as f:
                 self.threshold = json.load(f)
+        else:
+            self.threshold = {}
         
         self.retrievers = {}
         for e in self.args.retriever.ensemble:
@@ -33,11 +35,21 @@ class PassageRetriever():
             scores.append(score)
             weights.append(self.weights[e])
         rankings, scores = self.voter.predict(rankings, scores, weights)
-        if self.args.retriever.use_ranker and sum(scores)/len(scores)<self.threshold.get(key, 100):
-            fin_rankings, fin_scores = self.ranker.predict(questions, rankings) # theme
-            return fin_rankings, fin_scores
-        else:
-            return rankings, scores
+        if self.args.retriever.use_ranker:
+            to_pred_idx = []
+            for i, score in enumerate(scores):
+                diff = score[0]-score[1]
+                if diff < self.threshold.get(theme, 0.1): 
+                    to_pred_idx.append(i)
+            if len(to_pred_idx)>0:
+                _rankings = [rankings[i] for i in to_pred_idx]
+                _questions = [questions[i] for i in to_pred_idx]
+                _rankings,_scores = self.ranker.predict(_questions, _rankings)
+            for i, idx in enumerate(to_pred_idx):
+                rankings[idx] = _rankings[i]
+                scores[idx] = _scores[i]
+        return rankings, scores
+
     
     def time_profile(self,questions,theme):
         rankings, scores, weights, latencies = [], [], [], {}

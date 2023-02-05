@@ -28,7 +28,7 @@ class RetrieverArgs:
     ranker_treshold_path: str = 'coefficients.json'
     use_ranker: bool = False
     reranker: str = 'cross-encoder'
-    ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-4-v2'
+    ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-2-v2'
     ranker_batch_size: int = 8
     
 @dataclass
@@ -38,7 +38,7 @@ class ThemeTrainerArgs:
     lr: float = 1e-5
     train_frac: float = 0.8
     
-    ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-4-v2'
+    ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-2-v2'
     n_questions: int = 50
     n_negatives: int = 10
     

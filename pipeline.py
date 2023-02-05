@@ -13,6 +13,9 @@ class Pipeline():
         self.retriever = PassageRetriever(self.args, self.df)
         self.reader = QuestionAnswering(self.args, self.df)
         self.to(self.args.device)
+        
+    def load_theme_model(self, theme, backend='onnx'):
+        self.retriever.load_theme_model(theme, backend)
                 
     def __call__(self, questions, theme):
         rankings, scores = self.retriever.predict(questions, theme)
@@ -25,7 +28,7 @@ class Pipeline():
 
     def warmup(self):
         row = self.df.sample().iloc[0]
-        _ = self(['When?'], row.Theme)
+        _ = self(['Does this paragraph have an answer?'], row.Theme)
         return
     
     def time_profile(self, questions, theme):
