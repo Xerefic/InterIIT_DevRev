@@ -4,6 +4,7 @@ gdown
 torch
 torchtext
 datasets
+spacy
 evaluate
 transformers
 elasticsearch==7.17.8
