@@ -32,6 +32,16 @@ class RetrieverArgs:
     ranker_batch_size: int = 8
     
 @dataclass
+class ThemeTrainerArgs:
+    batch_size: int = 16
+    max_epochs: int = 1
+    train_frac: float = 0.8
+    
+    ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-4-v2'
+    n_questions: int = 100
+    n_negatives: int = 10
+    
+@dataclass
 class ReaderArgs:
     onnx: bool = False  # onnx cpu only
     model_name: str = "bhadresh-savani/electra-base-squad2" #"deepset/tinyroberta-squad2"
@@ -50,7 +60,7 @@ class GeneratorArgs:
     
 
 @dataclass
-class TrainingArgs:
+class Args:
     device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
     n_jobs: int = os.cpu_count()
     onnx_provider: str = "CPUExecutionProvider"
@@ -59,6 +69,8 @@ class TrainingArgs:
     generator = GeneratorArgs()
     retriever = RetrieverArgs()
     reader = ReaderArgs()
+    
+    themetrainer = ThemeTrainerArgs()
     
     root_dir: str = './'
     checkpoints_dir: str = f'{root_dir}/checkpoints/'

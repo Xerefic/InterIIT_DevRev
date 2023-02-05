@@ -5,10 +5,10 @@ class PassageRetriever():
     def __init__(self, args, df):
         self.args = args
         self.weights = dict(self.args.retriever.weights)
-        treshold_path = os.path.join(self.args.saves_path, self.args.retriever.ranker_treshold_path)
-        if os.path.exists(treshold_path):
-            with open(treshold_path) as f:
-                self.treshold = json.load(f)
+        threshold_path = os.path.join(self.args.saves_path, self.args.retriever.ranker_treshold_path)
+        if os.path.exists(threshold_path):
+            with open(threshold_path) as f:
+                self.threshold = json.load(f)
         
         self.retrievers = {}
         for e in self.args.retriever.ensemble:
@@ -33,7 +33,7 @@ class PassageRetriever():
             scores.append(score)
             weights.append(self.weights[e])
         rankings, scores = self.voter.predict(rankings, scores, weights)
-        if self.args.retriever.use_ranker and sum(scores)/len(scores)<self.treshold.get(key, 100):
+        if self.args.retriever.use_ranker and sum(scores)/len(scores)<self.threshold.get(key, 100):
             fin_rankings, fin_scores = self.ranker.predict(questions, rankings) # theme
             return fin_rankings, fin_scores
         else:

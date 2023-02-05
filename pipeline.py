@@ -1,5 +1,5 @@
 from imports import *
-from args import TrainingArgs
+from args import Args
 from models.retriever import PassageRetriever
 from models.reader import QuestionAnswering
 

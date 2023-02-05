@@ -22,13 +22,13 @@ class ReRanker():
         self.para_id_to_paras = dict(zip(df.index, df.Paragraph))
         
     def predict(self, questions, rankings, **kwargs):
-        if theme:
-            model = self.get_theme_model(theme)
-        else:
-            model = self.model
+        # if theme:
+        #     model = self.get_theme_model(theme)
+        # else:
+        #     model = self.model
         batch_size = self.args.retriever.ranker_batch_size
         pairs = [(q, self.para_id_to_paras[p])  for q, ranking in zip(questions, rankings) for p in ranking]
-        scores = model.predict(pairs, batch_size=batch_size)
+        scores = self.model.predict(pairs, batch_size=batch_size)
         indices = [0]+[len(pred) for pred in rankings]
         indices = np.cumsum(indices)
         fin_rankings, fin_scores = [], []
@@ -43,6 +43,19 @@ class ReRanker():
         if self.backend=='torch':
             self.args.device = device
             self.model._target_device = device
+            
+    def load_theme_model(self,theme,backend='onnx'):
+        backend = 'pth' if backend=='torch' else backend
+        model_path = os.path.join(self.args.saves_path, f'crossencoder_{theme}.{backend}')
+        if not os.path.exists(model_path):return
+        if backend=='onnx':
+            self.model = OnnxRanker(session=onnxruntime.InferenceSession(model_path, onnxruntime.SessionOptions(),
+                                                              providers=[self.args.onnx_provider]), tokenizer = self.model.tokenizer, args=self.args)
+            print(f'loaded {theme}')
+        
+        if backend=='torch':
+            self.model = CrossEncoder(model_path)
+            print(f'loaded {theme}')
             
     def get_theme_model(self, theme):
         theme = re.sub("\.", "", theme)
@@ -59,6 +72,7 @@ class ReRanker():
             if os.path.exists(model_path):
                 theme_model = OnnxRanker(session=onnxruntime.InferenceSession(model_path, onnxruntime.SessionOptions(),
                                                               providers=[self.args.onnx_provider]), tokenizer=tokenizer, args=self.args)
+                print('loaded theme')
             else:
                 theme_model = self.model
         return theme_model

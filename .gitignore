@@ -1,5 +1,6 @@
 .DS_Store
 data/
+*.csv
 *.ipynb
 *.onnx
 *.pth

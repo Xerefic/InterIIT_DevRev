@@ -44,8 +44,9 @@ from retriv import SearchEngine
 
 from transformers import AutoConfig, AutoTokenizer, AutoModel, AutoModelWithLMHead, AutoModelForSequenceClassification, PreTrainedModel, PretrainedConfig, AutoModelForQuestionAnswering
 from transformers import pipeline as transformers_pipeline
-from sentence_transformers import SentenceTransformer, CrossEncoder
+from sentence_transformers import SentenceTransformer, CrossEncoder, InputExample
 from sentence_transformers.util import semantic_search
+from sentence_transformers.cross_encoder.evaluation import CEBinaryClassificationEvaluator
 from datasets import load_dataset
 
 import onnxruntime
