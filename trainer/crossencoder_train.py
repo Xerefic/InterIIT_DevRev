@@ -1,11 +1,153 @@
 from imports import *
 
+class CrossEncoderCustom(CrossEncoder):
+    def fit(self,
+            train_dataloader: DataLoader,
+            evaluator: SentenceEvaluator = None,
+            epochs: int = 1,
+            loss_fct = None,
+            activation_fct = nn.Identity(),
+            scheduler: str = 'WarmupLinear',
+            warmup_steps: int = 10000,
+            optimizer_class: Type[Optimizer] = torch.optim.AdamW,
+            optimizer_params: Dict[str, object] = {'lr': 2e-5},
+            weight_decay: float = 0.01,
+            evaluation_steps: int = 0,
+            output_path: str = None,
+            save_best_model: bool = True,
+            max_grad_norm: float = 1,
+            use_amp: bool = False,
+            callback: Callable[[float, int, int], None] = None,
+            show_progress_bar: bool = True,
+            use_teacher: bool = False,
+            distill_logits: bool = False,
+            temperature: int = 6,
+            alpha: float = 0.4,
+            m: float = 0.999,
+            ema_when: str = 'epoch',
+            ):
+        
+        train_dataloader.collate_fn = self.smart_batching_collate
+
+        if use_amp:
+            from torch.cuda.amp import autocast
+            scaler = torch.cuda.amp.GradScaler()
+
+        self.model.to(self._target_device)
+
+        if output_path is not None:
+            os.makedirs(output_path, exist_ok=True)
+
+        self.best_score = -9999999
+        num_train_steps = int(len(train_dataloader) * epochs)
+
+        # Prepare optimizers
+        param_optimizer = list(self.model.named_parameters())
+
+        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
+            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+        ]
+
+        optimizer = optimizer_class(optimizer_grouped_parameters, **optimizer_params)
+
+        if isinstance(scheduler, str):
+            scheduler = SentenceTransformer._get_scheduler(optimizer, scheduler=scheduler, warmup_steps=warmup_steps, t_total=num_train_steps)
+
+        if loss_fct is None:
+            loss_fct = nn.BCEWithLogitsLoss() if self.config.num_labels == 1 else nn.CrossEntropyLoss()
+        loss_kl = nn.KLDivLoss()    
+        
+
+        teacher = copy.deepcopy(self.model)
+        teacher.eval()
+        
+        skip_scheduler = False
+        for epoch in tqdm.trange(epochs, desc="Epoch", disable=True):
+            training_steps = 0
+            self.model.zero_grad()
+            self.model.train()
+            
+
+            for features, labels in tqdm.tqdm(train_dataloader, desc="Iteration", smoothing=0.05, disable=True):
+                if use_amp:
+                    with autocast():
+                        model_predictions = self.model(**features, return_dict=True)
+                        logits = activation_fct(model_predictions.logits)
+                        if self.config.num_labels == 1:
+                            logits = logits.view(-1)
+                        loss_value = loss_fct(logits, labels)
+                        
+                    if use_teacher:
+                        teacher_predictions = teacher(**features, return_dict=True)
+                        teacher_logits = activation_fct(teacher_predictions.logits)
+                        loss_diff = (teacher_logits - logits).pow(2).mean()
+                        loss_value = loss_value + loss_diff
+                        if distill_logits:
+                            loss_kl = kl_criterion(F.log_softmax(student_logits/temperature, dim=1),
+                                                        F.softmax(teacher_logits/temperature, dim=1) * (temperature * temperature))
+                            loss_value = loss_value * (1 - alpha) + loss_diff + loss_kl * alpha
+
+                    scale_before_step = scaler.get_scale()
+                    scaler.scale(loss_value).backward()
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_grad_norm)
+                    scaler.step(optimizer)
+                    scaler.update()
+
+                    skip_scheduler = scaler.get_scale() != scale_before_step
+                else:
+                    model_predictions = self.model(**features, return_dict=True)
+                    logits = activation_fct(model_predictions.logits)
+                    if self.config.num_labels == 1:
+                        logits = logits.view(-1)
+                    loss_value = loss_fct(logits, labels)
+                    
+                    if use_teacher:
+                        teacher_predictions = teacher(**features, return_dict=True)
+                        teacher_logits = activation_fct(teacher_predictions.logits)
+                        loss_diff = (teacher_logits - logits).pow(2).mean()
+                        loss_value = loss_value + loss_diff
+                        if distill_logits:
+                            loss_kl = kl_criterion(F.log_softmax(student_logits/temperature, dim=1),
+                                                        F.softmax(teacher_logits/temperature, dim=1) * (temperature * temperature))
+                            loss_value = loss_value * (1 - alpha) + loss_diff + loss_kl * alpha
+                    
+                    loss_value.backward()
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_grad_norm)
+                    optimizer.step()
+
+                optimizer.zero_grad()
+
+                if not skip_scheduler:
+                    scheduler.step()
+                
+                if ema_when=='step' and use_teacher:
+                    for t_param, s_param in zip(teacher.parameters(), self.model.parameters()):
+                        t_param.data.copy_(t_param.data * m + s_param.data * (1-m))
+
+                training_steps += 1
+
+                if evaluator is not None and evaluation_steps > 0 and training_steps % evaluation_steps == 0:
+                    self._eval_during_training(evaluator, output_path, save_best_model, epoch, training_steps, callback)
+
+                    self.model.zero_grad()
+                    self.model.train()
+            
+            if ema_when=='epoch' and use_teacher:
+                for t_param, s_param in zip(teacher.parameters(), self.model.parameters()):
+                    t_param.data.copy_(t_param.data * m + s_param.data * (1-m))
+
+            if evaluator is not None:
+                self._eval_during_training(evaluator, output_path, save_best_model, epoch, -1, callback)
+
 class ReRankerTrainer():
     def __init__(self, args, df, pipe):
         self.args = args
-        self.base_model = CrossEncoder(self.args.themetrainer.ranker_model_name)
+        self.base_model = CrossEncoderCustom(self.args.themetrainer.ranker_model_name)
         self.to(self.args.device)
-        self.fit(df, pipe)
+        self.data = None
         
     def to(self, device):
         self.args.device = device
@@ -13,12 +155,15 @@ class ReRankerTrainer():
                     
     def collect_data(self, df, pipe, n_questions):
         data = []
-        for _, row in tqdm.tqdm(df.iterrows(), total=len(df)):
+        para = copy.deepcopy(df)
+        para = para.loc[:, ['Para_id', 'Paragraph', 'Theme', 'GeneratedQuestions']]
+        para = para.drop_duplicates(subset=['Para_id', 'Paragraph', 'Theme'])
+        for _, row in tqdm.tqdm(para.iterrows(), total=len(para)):
             qns = row.GeneratedQuestions
             if len(row.GeneratedQuestions) > n_questions:
                 qns = random.sample(row.GeneratedQuestions,n_questions)
             retrieved,_ = pipe.retriever.predict(qns,row.Theme)
-            for i,qn in enumerate(qns):
+            for i, qn in enumerate(qns):
                 data.append({'Para_id':row.Para_id,
                              'Paragraph':row.Paragraph,
                              'Question':qn,
@@ -34,7 +179,10 @@ class ReRankerTrainer():
             retrieved = entry['retrieved'].copy()
             if entry['Para_id'] in retrieved:
                 retrieved.remove(entry['Para_id'])
-            negative_ids = random.sample(retrieved, n_negatives)
+            if len(retrieved) > n_negatives:
+                negative_ids = random.sample(retrieved, n_negatives)
+            else:
+                negative_ids = retrieved
             for idx in negative_ids:
                 examples.append(InputExample(texts=[entry['Question'] , para_lookup[idx]], label= 0))
         return examples
@@ -68,10 +216,11 @@ class ReRankerTrainer():
             )
             
     def fit(self, df, pipe):
-        data = self.collect_data(df, pipe, self.args.themetrainer.n_questions)
+        if self.data is None:
+            self.data = self.collect_data(df, pipe, self.args.themetrainer.n_questions)
         para_lookup = dict(zip(df.Para_id, df.Paragraph))
-        for theme, G in tqdm.tqdm(data.groupby('Theme'), total=data.Theme.nunique()):
-            examples = self.create_examples(G.to_dict('records'), para_lookup)
+        for theme, G in tqdm.tqdm(self.data.groupby('Theme'), total=self.data.Theme.nunique()):
+            examples = self.create_examples(G.to_dict('records'), para_lookup, self.args.themetrainer.n_negatives)
             n = int(len(examples) * self.args.themetrainer.train_frac)
             train = examples[:n]
             test = examples[n:]
@@ -85,7 +234,11 @@ class ReRankerTrainer():
             model.fit(train_dataloader=train_dataloader,
                       epochs=self.args.themetrainer.max_epochs,
                       warmup_steps=warmup_steps,
-                      output_path=None)
+                      output_path=None,
+                      use_teacher=self.args.themetrainer.use_teacher,
+                      distill_logits=self.args.themetrainer.distill_logits,
+                      ema_when=self.args.themetrainer.ema_when,
+                     )
             score = evaluator(model)
             print(f'Score After = {score}', end='\n\n')
             theme = re.sub("\.", "", theme)

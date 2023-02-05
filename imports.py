@@ -24,7 +24,7 @@ import itertools
 import collections
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Union, List, Dict, Any, Optional, cast
+from typing import Union, List, Dict, Any, Optional, cast, Type, Callable
 
 import spacy
 import nltk; nltk.download('stopwords')
@@ -37,6 +37,7 @@ from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.optim import Optimizer
 
 # from elasticsearch import Elasticsearch
 from retriv import SearchEngine
@@ -47,6 +48,7 @@ from transformers import pipeline as transformers_pipeline
 from sentence_transformers import SentenceTransformer, CrossEncoder, InputExample
 from sentence_transformers.util import semantic_search
 from sentence_transformers.cross_encoder.evaluation import CEBinaryClassificationEvaluator
+from sentence_transformers.evaluation import SentenceEvaluator
 from datasets import load_dataset
 
 import onnxruntime

@@ -33,13 +33,18 @@ class RetrieverArgs:
     
 @dataclass
 class ThemeTrainerArgs:
-    batch_size: int = 16
+    batch_size: int = 4
     max_epochs: int = 1
+    lr: float = 1e-5
     train_frac: float = 0.8
     
     ranker_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-4-v2'
-    n_questions: int = 100
+    n_questions: int = 50
     n_negatives: int = 10
+    
+    use_teacher: bool = True
+    ema_when: str = 'step'
+    distill_logits: bool = False
     
 @dataclass
 class ReaderArgs:

@@ -25,7 +25,7 @@ class Pipeline():
 
     def warmup(self):
         row = self.df.sample().iloc[0]
-        _ = self([row.Question], row.Theme)
+        _ = self(['When?'], row.Theme)
         return
     
     def time_profile(self, questions, theme):
