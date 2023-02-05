@@ -77,7 +77,7 @@ class Args:
     
     themetrainer = ThemeTrainerArgs()
     
-    root_dir: str = './'
+    root_dir: str = '.'
     checkpoints_dir: str = f'{root_dir}/checkpoints/'
     data_dir: str = f'{root_dir}/data/'
     file_path: str = 'testset_A_with_qns.csv'
