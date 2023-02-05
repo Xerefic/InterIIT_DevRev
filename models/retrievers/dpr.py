@@ -129,6 +129,7 @@ def sentence_transformers_onnx_reader(args, model, path, do_lower_case=True, inp
                     "start": symbolic_names,
                     "end": symbolic_names,
                 },
+                operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK,
             )
             _model = onnx.load(f"{path}.onnx")
             # model_simp, check = onnx_simplify(_model)

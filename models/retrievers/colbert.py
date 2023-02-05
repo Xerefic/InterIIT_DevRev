@@ -54,7 +54,8 @@ class ColBertOnnx():
     def __init__(self, args,model, tokenizer):
         features = dict(tokenizer(['dummy'], return_tensors='pt'))
         torch.onnx.export(model, features, 'temp.onnx', dynamic_axes={'input_ids':[0, 1], 'attention_mask':[0, 1]}, 
-                          input_names=['input_ids', 'attention_mask'])
+                          input_names=['input_ids', 'attention_mask'],
+                          operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK,)
         
         _model = onnx.load('temp.onnx')
         # model_simp, check = onnx_simplify(_model)

@@ -213,6 +213,7 @@ class ReRankerTrainer():
                     "token_type_ids": symbolic_names,
                     "attention_mask": symbolic_names,
                 },
+                operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK,
             )
             
     def fit(self, df, pipe):
