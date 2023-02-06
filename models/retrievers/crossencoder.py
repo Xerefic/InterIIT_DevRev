@@ -42,6 +42,7 @@ class ReRanker():
     def to(self, device):
         if self.backend=='torch':
             self.args.device = device
+            self.model.model.to(device)
             self.model._target_device = device
             
     def load_theme_model(self, theme, backend='onnx'):

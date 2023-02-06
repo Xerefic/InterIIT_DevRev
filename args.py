@@ -33,8 +33,8 @@ class RetrieverArgs:
     
 @dataclass
 class ThemeTrainerArgs:
-    batch_size: int = 4
-    max_epochs: int = 1
+    batch_size: int = 8
+    max_epochs: int = 10
     lr: float = 1e-5
     train_frac: float = 0.8
     
@@ -49,7 +49,7 @@ class ThemeTrainerArgs:
 @dataclass
 class ReaderArgs:
     onnx: bool = False  # onnx cpu only
-    model_name: str = "bhadresh-savani/electra-base-squad2" #"deepset/tinyroberta-squad2"
+    model_name: str = "deepset/tinyroberta-squad2"
     batch_size: int = 32
     max_seq_len: int = 400
     
@@ -60,8 +60,8 @@ class GeneratorArgs:
     top_p: float = 0.98
     num_return_sequences: int = 2
     max_length_query: int = 64
-    file_path: str = 'testset_A.csv'
-    save_file: str = 'test_set_A_qn_generated.csv'
+    file_path: str = 'paragraphs.csv'
+    save_file: str = 'paragraphs_gen.csv'
     
 
 @dataclass
@@ -80,6 +80,6 @@ class Args:
     root_dir: str = '.'
     checkpoints_dir: str = f'{root_dir}/checkpoints/'
     data_dir: str = f'{root_dir}/data/'
-    file_path: str = 'testset_A_with_qns.csv'
+    file_path: str = 'sample_input_question.csv'
     saves_path: str = f'{root_dir}/saves/'
     joblib_path: str = 'pipeline.joblib'
